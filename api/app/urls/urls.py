@@ -1,0 +1,1 @@
+ALL_SHOP_URL='https://cafenomad.tw/api/v1.2/cafes'
