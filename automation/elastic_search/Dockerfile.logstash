@@ -1,0 +1,9 @@
+FROM docker.elastic.co/logstash/logstash:7.9.3
+
+# copy postgresql jdbc driver to the logstash image
+COPY ./bin/ /usr/share/logstash/logstash-core/lib/jars
+
+# copy usersync pipeline to the logstash image
+COPY config/ /usr/share/logstash/config/
+
+CMD ["logstash", "-f", "/usr/share/logstash/config/usersync.conf"]

@@ -1,0 +1,27 @@
+version: '3.7'
+services:
+    elasticsearch:
+        image: elasticsearch:8.2.3
+        container_name: elasticsearch
+        environment:
+        - discovery.type=single-node
+        ports:
+        - 9200:9200
+        - 9300:9300
+        volumes:
+        - ./data:/usr/share/elasticsearch/data
+        networks:
+        - esnet
+    kibana:
+        image: kibana:8.2.3
+        container_name: kibana
+        ports:
+        - 5601:5601
+        networks:
+        - esnet
+        depends_on:
+        - elasticsearch
+networks:
+    esnet:
+        driver: bridge
+        name: elasticsearch_esnet
