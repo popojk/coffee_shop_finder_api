@@ -1,2 +1,7 @@
+fastapi
+uvicorn
 requests
 sqlalchemy
+psycopg2
+alembic
+apscheduler
