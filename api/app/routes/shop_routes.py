@@ -42,6 +42,18 @@ class ShopRoutes(AbstractRoutes):
         shop = self.shop_info_service.get_shop_by_id(shop_id)
         return self.handle_response(shop)
 
-    def fuzzy_get_shops(self, fuzzy_string: str = Query(..., title="The fuzzy string of the shops to get")):
-        shops = self.shop_info_service.fuzzy_get_shops(fuzzy_string)
+    def fuzzy_get_shops(self,
+                        keyWord: str = Query(...,
+                                             title="The key word of the shops to get"),
+                        hasSocket: bool = Query(...,
+                                                title="Get shops that has socket"),
+                        hasWifi:  bool = Query(...,
+                                               title="Get shops that has wifi"),
+                        hasNoLimitedTime:  bool = Query(
+                            ..., title="Get shops that has no limited time"),
+                        page: int = Query(..., title="Enter page number"),
+                        page_size: int = Query(..., title="Enter page size"),
+                        ):
+        shops = self.shop_info_service.fuzzy_get_shops(
+            keyWord=keyWord, hasSocket=hasSocket, hasWifi=hasWifi, hasNoLimitedTime=hasNoLimitedTime, page=page, page_size=page_size)
         return self.handle_response(shops)

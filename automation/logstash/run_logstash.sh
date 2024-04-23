@@ -1,6 +1,6 @@
 IMAGE_NAME=coffee_shop_finder_logstash
 
-docker run --rm --name logstash \
+docker run --rm -it --name logstash \
   -p 5050:5050 \
   -e "CONFIG_SUPPORT_ESCAPE=true" \
   -e "ELASTICSEARCH_URL=http://elasticsearch:9200" \

@@ -8,6 +8,7 @@ from sqlalchemy import and_
 
 from fastapi import HTTPException, status
 import json
+import redis
 
 
 class ShopInfoService:
@@ -79,30 +80,67 @@ class ShopInfoService:
         except Exception as e:
             raise HTTPException(e)
 
-    def fuzzy_get_shops(self, fuzzy_string: str) -> list:
+    def fuzzy_get_shops(self,
+                        keyWord: str,
+                        hasSocket: bool,
+                        hasWifi: bool,
+                        hasNoLimitedTime: bool,
+                        page: int = 1,
+                        page_size: int = 10
+                        ) -> list:
+        # calculate index
+        start_index = (page - 1) * page_size
         # get the results from elasticsearch
         url = ELASTIC_SEARCH_URL + '/_search'
         query = {
             "query": {
-                "multi_match": {
-                    "query": fuzzy_string,
-                    "fields": ["name", "address"]
+                "bool": {
+                    "must": [
+                        {
+                            "multi_match": {
+                                "query": keyWord,
+                                "fields": ["name^2", "address"]
+                            }
+                        }
+                    ],
+                    "filter": []
                 }
             },
-            "_source": ["id", "name", "address"]
+            "_source": ["id", "name", "address", "rating"],
+            "sort": [
+                {"_score": {"order": "desc"}},
+                {"rating": {"order": "desc"}},
+            ],
+            "from": start_index,
+            "size": page_size
         }
+
+        if hasSocket:
+            query["query"]["bool"]["filter"].append(
+                {"match": {"socket": True}})
+
+        if hasWifi:
+            query["query"]["bool"]["filter"].append(
+                {"range": {"wifi": {"gt": 0}}})
+
+        if hasNoLimitedTime:
+            query["query"]["bool"]["filter"].append(
+                {"match": {"limited_time": True}})
+
         # turn query into JSON format
         query_json = json.dumps(query)
         headers = {'Content-Type': 'application/json'}
         # get data from elasticsearch
         response = FetchService.get(url, data=query_json, headers=headers)
+
         shops_data = []
         if response['hits']['hits'] != []:
             shops_data = [
                 {
                     "id": hit["_source"]["id"],
                     "name": hit["_source"]["name"],
-                    "address": hit["_source"]["address"]
+                    "address": hit["_source"]["address"],
+                    "rating": hit["_source"]["rating"],
                 }
                 for hit in response.get('hits', {}).get('hits', [])
             ]
