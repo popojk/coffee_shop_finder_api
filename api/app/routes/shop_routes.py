@@ -43,7 +43,7 @@ class ShopRoutes(AbstractRoutes):
         return self.handle_response(shop)
 
     def fuzzy_get_shops(self,
-                        keyWord: str = Query(...,
+                        keyWord: str = Query('',
                                              title="The key word of the shops to get"),
                         hasSocket: bool = Query(...,
                                                 title="Get shops that has socket"),

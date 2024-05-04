@@ -1,7 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:password@coffee_shop_finder_db:5432/coffee_shop_finder_db"
+import os
+
+# SQLALCHEMY_DATABASE_URL = "postgresql://postgres:password@localhost:5433/coffee_shop_finder_db"
+SQLALCHEMY_DATABASE_URL = os.environ.get('DB_URL', None)
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL

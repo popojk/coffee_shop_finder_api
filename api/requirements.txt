@@ -8,3 +8,4 @@ apscheduler
 redis
 BeautifulSoup4
 selenium
+python-dotenv

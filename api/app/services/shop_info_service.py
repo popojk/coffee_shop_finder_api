@@ -1,6 +1,5 @@
 from app.services.fetch_service import FetchService
 from app.database.database import db_session_decorator
-from app.urls.urls import *
 from app.errors.errors import *
 from app.models.models import *
 
@@ -9,6 +8,7 @@ from sqlalchemy import and_
 from fastapi import HTTPException, status
 import json
 import redis
+import os
 
 
 class ShopInfoService:
@@ -91,18 +91,14 @@ class ShopInfoService:
         # calculate index
         start_index = (page - 1) * page_size
         # get the results from elasticsearch
-        url = ELASTIC_SEARCH_URL + '/_search'
+        ELASTICSEARCH_URL = os.environ.get('ELASTICSEARCH_URL', None)
+        if ELASTICSEARCH_URL is None:
+            raise HTTPException('ELASTICSEARCH_URL was not set in env file')
+        url = ELASTICSEARCH_URL + '/_search'
         query = {
             "query": {
                 "bool": {
-                    "must": [
-                        {
-                            "multi_match": {
-                                "query": keyWord,
-                                "fields": ["name^2", "address"]
-                            }
-                        }
-                    ],
+                    "must": [],
                     "filter": []
                 }
             },
@@ -114,6 +110,20 @@ class ShopInfoService:
             "from": start_index,
             "size": page_size
         }
+
+        if keyWord == '':
+            query["query"]["bool"]["must"].append(
+                {
+                    "match_all": {}
+                })
+        else:
+            query["query"]["bool"]["must"].append(
+                {
+                    "multi_match": {
+                        "query": keyWord,
+                        "fields": ["name^2", "address"]
+                    }
+                })
 
         if hasSocket:
             query["query"]["bool"]["filter"].append(
