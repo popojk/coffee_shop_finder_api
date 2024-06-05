@@ -7,7 +7,7 @@ import os
 SQLALCHEMY_DATABASE_URL = os.environ.get('DB_URL', None)
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL
+    "postgresql://postgres:password@localhost:5433/coffee_shop_finder_db"
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

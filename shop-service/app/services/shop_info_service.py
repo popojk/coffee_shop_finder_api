@@ -82,6 +82,8 @@ class ShopInfoService:
 
     def fuzzy_get_shops(self,
                         keyWord: str,
+                        city: str,
+                        district: str,
                         hasSocket: bool,
                         hasWifi: bool,
                         hasNoLimitedTime: bool,
@@ -121,10 +123,15 @@ class ShopInfoService:
                 {
                     "multi_match": {
                         "query": keyWord,
-                        "fields": ["name^2", "address"]
+                        "fields": ["name^2", "address^1"]
                     }
                 })
-
+        if city != '':
+            query["query"]["bool"]["filter"].append(
+                {"term": {"city": city}})
+        if district != '':
+            query["query"]["bool"]["filter"].append(
+                {"term": {"district": district}})
         if hasSocket:
             query["query"]["bool"]["filter"].append(
                 {"match": {"socket": True}})

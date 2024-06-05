@@ -12,7 +12,7 @@ class ShopRoutes(AbstractRoutes):
             '/api/shops', self.get_shops, methods=['GET']
         )
         self.routes.add_api_route(
-            '/api/shop', self.get_shop, methods=['GET']
+            '/api/shops/detail', self.get_shop, methods=['GET']
         )
         self.routes.add_api_route(
             '/api/shops/fuzzy', self.fuzzy_get_shops, methods=['GET']
@@ -45,6 +45,8 @@ class ShopRoutes(AbstractRoutes):
     def fuzzy_get_shops(self,
                         keyWord: str = Query('',
                                              title="The key word of the shops to get"),
+                        city: str = Query('', title="The city name"),
+                        district: str = Query('', title="the district name"),
                         hasSocket: bool = Query(...,
                                                 title="Get shops that has socket"),
                         hasWifi:  bool = Query(...,
@@ -55,5 +57,5 @@ class ShopRoutes(AbstractRoutes):
                         page_size: int = Query(..., title="Enter page size"),
                         ):
         shops = self.shop_info_service.fuzzy_get_shops(
-            keyWord=keyWord, hasSocket=hasSocket, hasWifi=hasWifi, hasNoLimitedTime=hasNoLimitedTime, page=page, page_size=page_size)
+            keyWord=keyWord, hasSocket=hasSocket, hasWifi=hasWifi, hasNoLimitedTime=hasNoLimitedTime, city=city, district=district, page=page, page_size=page_size)
         return self.handle_response(shops)

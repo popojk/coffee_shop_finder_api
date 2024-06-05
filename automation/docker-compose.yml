@@ -1,0 +1,149 @@
+version: '3.8'
+
+services:
+
+  shop-service:
+    container_name: shop-service
+    build:
+      context: ./../shop-service
+      dockerfile: ./../shop-service/shop-service.dockerfile
+    restart: always
+    ports:
+      - "8100:8100"
+    environment:
+      DB_URL: "postgresql://postgres:password@coffee_shop_finder_db:5432/coffee_shop_finder_db"
+      ELASTICSEARCH_URL: "http://elasticsearch:9200"
+      DEBUG: "false"
+
+  auth-service:
+    container_name: auth-service
+    build:
+      context: ./../authentication-service
+      dockerfile: ./../authentication-service/auth-service.dockerfile
+    restart: always
+    ports: 
+      - "8200:8200"
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      DEBUG: "false"
+      SERVER_ADDRESS: ":8200"
+      CONTEXT_TIMEOUT: 2
+      DATABASE_HOST: "coffee_shop_finder_user_db"
+      DATABASE_PORT: "5432"
+      DATABASE_USER: "postgres"
+      DATABASE_PASS: "password"
+      DATABASE_NAME: "coffee_shop_finder_user_db"
+      REDIS_DOMAIN: "redis:6379"
+      SECRET_KEY: "ahf;ajhf;ajsdajsd;fajsdfha;sjfa"
+
+  review-service:
+    container_name: review-service
+    build:
+      context: ./../review-service
+      dockerfile: ./../review-service/review-service.dockerfile
+    restart: always
+    ports: 
+      - "8300:8300"
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      DEBUG: "false"
+      SERVER_ADDRESS: ":8300"
+      CONTEXT_TIMEOUT: 2
+      DSN: "host=coffee_shop_finder_review_db port=5432 user=postgres password=password dbname=coffee_shop_finder_review_db sslmode=disable timezone=UTC connect_timeout=5"
+      AUTH_DOMAIN: "auth-service"
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "8000:80"
+    volumes:
+      - ./../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - users-service
+      - review-service
+      - shop-service
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    restart: always
+
+  coffee_shop_finder_postgres:
+    image: postgres:13
+    container_name: coffee_shop_finder_db
+    environment:
+      POSTGRES_DB: coffee_shop_finder_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - my_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    restart: always
+
+  auth_service_postgres:
+    image: postgres:13
+    container_name: coffee_shop_finder_user_db
+    environment:
+      POSTGRES_DB: coffee_shop_finder_user_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - coffee_shop_finder_user_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    restart: always
+
+  review_service_postgres:
+    image: postgres:13
+    container_name: coffee_shop_finder_review_db
+    environment:
+      POSTGRES_DB: coffee_shop_finder_review_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - coffee_shop_finder_review_data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+    restart: always
+
+  elasticsearch:
+    build:
+      context: ./elastic_search
+      dockerfile: ./Dockerfile.elasticsearch
+    restart: always
+    ports: 
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: -Xms750m -Xmx750m
+      xpack.security.enabled: false
+    volumes:
+      - ./elastic_search/data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: kibana:8.12.2
+    container_name: kibana
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    restart: always
+    depends_on:
+      - elasticsearch
+
+volumes:
+  coffee_shop_finder_user_data:
+    name: coffee_shop_finder_user_data
+  coffee_shop_finder_review_data:
+    name: coffee_shop_finder_review_data
+  my_postgres_data:
+    name: my_postgres_data

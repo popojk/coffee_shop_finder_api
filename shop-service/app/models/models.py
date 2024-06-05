@@ -10,6 +10,7 @@ class Shop(Base):
     id = Column(String, primary_key=True)
     name = Column(String, index=True)
     city = Column(String)
+    district = Column(String)
     wifi = Column(Integer)
     seat = Column(Integer)
     quiet = Column(Integer)
@@ -25,7 +26,6 @@ class Shop(Base):
     standing_desk = Column(Boolean)
     mrt = Column(String, index=True)
     open_time = Column(String)
-
 
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in class_mapper(self.__class__).mapped_table.c}
