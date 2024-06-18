@@ -25,7 +25,7 @@ type Models struct {
 
 type Review struct {
 	ID        int        `json:"id"`
-	Rating    float32    `json:"rating" validate:"required"`
+	Rating    float32    `json:"rating,omitempty"`
 	Content   string     `json:"content,omitempty"`
 	UserID    int        `json:"userId" validate:"required"`
 	ShopID    string     `json:"shopId" validate:"required"`

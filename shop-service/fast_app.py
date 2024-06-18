@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.routes.shop_routes import ShopRoutes
 from app.middlewares.exception import ExceptionHandlerMiddleware
 from app.middlewares.timer import RequestProcessMiddleware
@@ -19,5 +20,6 @@ class App():
 
 the_app = App()
 the_app.initialize()
+the_app.the_api.add_middleware(CORSMiddleware, allow_origins=['*'])
 the_app.the_api.add_middleware(ExceptionHandlerMiddleware)
 the_app.the_api.add_middleware(RequestProcessMiddleware)

@@ -46,7 +46,8 @@ class ShopRoutes(AbstractRoutes):
                         keyWord: str = Query('',
                                              title="The key word of the shops to get"),
                         city: str = Query('', title="The city name"),
-                        district: str = Query('', title="the district name"),
+                        district: list = Query(
+                            [''], title="the district list"),
                         hasSocket: bool = Query(...,
                                                 title="Get shops that has socket"),
                         hasWifi:  bool = Query(...,

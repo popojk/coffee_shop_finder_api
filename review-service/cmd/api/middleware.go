@@ -42,7 +42,7 @@ func validateTokenWithAuthService(token string) (bool, error) {
 	if authDomain != "" {
 		authServiceDomain = authDomain
 	}
-	authServiceURL := fmt.Sprintf("http://%s:8200/users/verify", authServiceDomain)
+	authServiceURL := fmt.Sprintf("http://%s:8200/api/users/verify", authServiceDomain)
 
 	req, err := http.NewRequest("GET", authServiceURL, nil)
 	if err != nil {
@@ -51,6 +51,7 @@ func validateTokenWithAuthService(token string) (bool, error) {
 
 	req.Header.Set("Authorization", token)
 
+	fmt.Println(token)
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -58,6 +59,7 @@ func validateTokenWithAuthService(token string) (bool, error) {
 	}
 	defer resp.Body.Close()
 
+	fmt.Println(resp.StatusCode)
 	if resp.StatusCode != http.StatusOK {
 		return false, errors.New("invalid token")
 	}

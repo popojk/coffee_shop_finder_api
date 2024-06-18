@@ -13,9 +13,6 @@ class FetchService:
                 response = requests.get(url, data=data, headers=headers)
             else:
                 response = requests.get(url)
-
-            if response.status_code == 200:
-                data = response.json()
-                return data
+            return response
         except Exception as e:
             print(e)

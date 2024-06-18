@@ -1,7 +1,5 @@
 from dotenv import load_dotenv, dotenv_values
 
-from app.commands.address_converter import *
-
 import uvicorn
 import argparse
 import os

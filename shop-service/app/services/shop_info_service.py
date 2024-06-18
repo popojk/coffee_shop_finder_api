@@ -9,6 +9,7 @@ from fastapi import HTTPException, status
 import json
 import redis
 import os
+import requests
 
 
 class ShopInfoService:
@@ -46,16 +47,40 @@ class ShopInfoService:
             print(e)
 
     @db_session_decorator
-    def get_shop_by_id(self, shop_id: int, db=None):
+    def get_shop_by_id(self, shop_id: str, db=None):
         try:
+            # get shop info first
             shop = db.query(Shop).filter(Shop.id == shop_id).first()
-            if shop:
-                return shop.__dict__
-            else:
+
+            if not shop:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="shop_id does not exist"
                 )
+
+            # get shop reviews from reviewservice
+            review_service_domain = os.environ.get('REVIEW_SERVICE_DOMAIN')
+            auth_service_domain = os.environ.get('AUTH_SERVICE_DOMAIN')
+
+            review_service_url = f'http://{review_service_domain}/api/reviews?shopId={shop.id}&page=1&pageSize=10'
+            response = FetchService.get(url=review_service_url)
+            reviews = response.json()['data']
+            shop_dict = shop.__dict__
+            if response.status_code == 202 and reviews is not None:
+                # loop over reviews and get user info
+                for review in reviews:
+                    userId = review['userId']
+                    auth_service_url = f'http://{auth_service_domain}/api/users/detail?id={userId}'
+                    response = FetchService.get(url=auth_service_url)
+                    review['username'] = response.json(
+                    )['username'] if response.status_code == 200 else ''
+                    review['avatar'] = response.json(
+                    )['avatar'] if response.status_code == 200 else ''
+                # overwrite shop_dict
+                shop_dict['reviews'] = reviews
+            else:
+                shop_dict['reviews'] = []
+            return shop_dict
         except Exception as e:
             print(e)
 
@@ -83,7 +108,7 @@ class ShopInfoService:
     def fuzzy_get_shops(self,
                         keyWord: str,
                         city: str,
-                        district: str,
+                        district: list,
                         hasSocket: bool,
                         hasWifi: bool,
                         hasNoLimitedTime: bool,
@@ -104,7 +129,7 @@ class ShopInfoService:
                     "filter": []
                 }
             },
-            "_source": ["id", "name", "address", "rating"],
+            "_source": ["id", "name", "address", "rating", "wifi", "socket", "limited_time"],
             "sort": [
                 {"_score": {"order": "desc"}},
                 {"rating": {"order": "desc"}},
@@ -129,9 +154,9 @@ class ShopInfoService:
         if city != '':
             query["query"]["bool"]["filter"].append(
                 {"term": {"city": city}})
-        if district != '':
+        if district != ['']:
             query["query"]["bool"]["filter"].append(
-                {"term": {"district": district}})
+                {"terms": {"district": district}})
         if hasSocket:
             query["query"]["bool"]["filter"].append(
                 {"match": {"socket": True}})
@@ -142,13 +167,14 @@ class ShopInfoService:
 
         if hasNoLimitedTime:
             query["query"]["bool"]["filter"].append(
-                {"match": {"limited_time": True}})
+                {"match": {"limited_time": False}})
 
         # turn query into JSON format
         query_json = json.dumps(query)
         headers = {'Content-Type': 'application/json'}
         # get data from elasticsearch
-        response = FetchService.get(url, data=query_json, headers=headers)
+        response = FetchService.get(
+            url, data=query_json, headers=headers).json()
 
         shops_data = []
         if response['hits']['hits'] != []:
@@ -158,6 +184,9 @@ class ShopInfoService:
                     "name": hit["_source"]["name"],
                     "address": hit["_source"]["address"],
                     "rating": hit["_source"]["rating"],
+                    "hasWifi": True if hit["_source"]["wifi"] != 0 else False,
+                    "hasSocket": hit["_source"]["socket"],
+                    "hasNolimitedTime": not hit["_source"]["limited_time"],
                 }
                 for hit in response.get('hits', {}).get('hits', [])
             ]
